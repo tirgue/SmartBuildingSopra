@@ -1,11 +1,17 @@
 import time
 import math
-
-
+from sensors.AnalogTemperature import AnalogTemperature
+from constants.ADCPins import *
+from constants.GPIOPins import *
+try:
+    from sensors import PCF8591 as ADC
+except:
+    import PCF8591 as ADC
+import RPi.GPIO as GPIO
 from azure.iot.device import IoTHubDeviceClient, Message
  
 CONNECTION_STRING = "HostName=test-hub-iot-sopra.azure-devices.net;DeviceId=test;SharedAccessKey=TNR/5rzIlvSpR5bwEQTFraUCEW2SY2G4vcuKfMltQ5I="
- 
+SEND_DELAY = 5 
 MSG_TXT = '{{"Temperature": {temperature}}}'
 
 
@@ -34,11 +40,19 @@ def iothub_send_message():
             print( "Sending message: {}".format(message) )
             client.send_message(message)
             print ( "Message successfully sent" )
-            time.sleep(5)
+            time.sleep(SEND_DELAY)
  
  
     except KeyboardInterrupt:
         print ( "IoTHubClient stopped" )
  
+def setup():
+        GPIO.setmode(GPIO.BCM)
+        ADC.setup(0x48)
+
 if __name__ == '__main__':
+    setup()
+    analogTemperature = AnalogTemperature(AIN0, GPIO17)
+
+    print(analogTemperature.export())
     iothub_send_message()

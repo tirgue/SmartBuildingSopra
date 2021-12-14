@@ -4,6 +4,7 @@ except:
     import PCF8591 as ADC
 import RPi.GPIO as GPIO
 import math
+import json
 
 class AnalogTemperature():
     def __init__(self, analogChannel, digitalChannel):
@@ -39,7 +40,13 @@ class AnalogTemperature():
         """Read the input and return the temperature expressed in Fahrenheit"""
         return (self.readCelcius() * 9/5) + 32
 
+    def export(self):
+        return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit()})
 
+
+def setup():
+        GPIO.setmode(GPIO.BCM)
+        ADC.setup(0x48)
 if __name__ == "__main__":
     import time
     from datetime import datetime
