@@ -1,5 +1,7 @@
 import RPi.GPIO as GPIO
 import time
+import json
+import datetime
 
 class Humiture():
     def __init__(self, digitalChannel):
@@ -113,6 +115,12 @@ class Humiture():
         """Read the input and return the humidity expressed in % and the temperature expressed in Celcius
         Note: Need to wait at least 1 sec between 2 measurements"""
         return self.read()
+
+    def export(self):
+        ts = datetime.datetime.now().timestamp()
+        humidity, temperature = self.readHumidityAndTemperature()
+        return json.dumps({"Humidity": humidity,"Temperature Celsius": temperature,"Timestamp" : ts})
+
 
 if __name__ == "__main__":
     import time
