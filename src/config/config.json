@@ -1,0 +1,37 @@
+{
+    "Capteurs" : {
+        "AnalogTemperature" : {
+            "AIN": 1,
+            "GPIO": 17,
+            "OUT": ""
+        },
+        "Barometer" : {
+            "AIN": "",
+            "GPIO": "",
+            "OUT": ""
+        },
+        "Humiditure" : {
+            "AIN": "",
+            "GPIO": 24,
+            "OUT": "" 
+        },
+        "PhotoResistor" : {
+            "name":"PhotoResistor",
+            "AIN": 0,
+            "GPIO": 16,
+            "OUT": "" 
+        },
+        "Gas" : {
+            "name":"Gas",
+            "AIN": "",
+            "GPIO": "",
+            "OUT": "" 
+        },
+        "Sound" : {
+            "name":"Sound",
+            "AIN": "",
+            "GPIO": "",
+            "OUT": "" 
+        }
+    }
+}
