@@ -53,7 +53,7 @@ if __name__ == "__main__":
     import time
     from datetime import datetime
 
-    AIN0 = 0        # Both need to be imported
+    AIN1 = 1        # Both need to be imported
     GPIO17 = 17     # from constants when used
 
     def setup():
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         ADC.setup(0x48)
 
     def loop():
-        analogTemperature = AnalogTemperature(AIN0, GPIO17)
+        analogTemperature = AnalogTemperature(AIN1, GPIO17)
         while True:
             kelvin = round(analogTemperature.readKelvin(), 2)
             celcius = round(analogTemperature.readCelcius(), 2)

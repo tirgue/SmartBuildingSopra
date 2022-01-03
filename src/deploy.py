@@ -2,6 +2,7 @@ import time
 import math
 from sensors.AnalogTemperature import AnalogTemperature
 from sensors.Humiture import Humiture
+from sensors.PhotoResistor import PhotoResistor
 from constants.ADCPins import *
 from constants.GPIOPins import *
 try:
@@ -32,16 +33,18 @@ def iothub_send_message():
     try:
         client = iothub_client_init()
         setup()
-        analogTemperature = AnalogTemperature(AIN0, GPIO17)
-        humiditure = Humiture(GPIO18)
+        analogTemperature = AnalogTemperature(AIN1, GPIO17)
+        photoResistor = PhotoResistor(AIN0, GPIO16)
+        humiditure = Humiture(GPIO24)
         while True:
             # Build the message with simulated telemetry values.
             time.sleep(0.1)
             
             temperatures = analogTemperature.export()
             temperatureAndHumiditure = humiditure.export()
+            resistancePhotoResitor = photoResistor.export()
 
-            dataToSendToIotHub = [temperatures,temperatureAndHumiditure]
+            dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor]
 
             for d in dataToSendToIotHub:
                 message = Message(d)

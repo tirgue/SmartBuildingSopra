@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import PCF8591 as ADC
+try:
+    from . import PCF8591 as ADC
+except:
+    import PCF8591 as ADC
 import RPi.GPIO as GPIO
 import time
 import datetime
@@ -40,11 +43,11 @@ if __name__ == "__main__":
     import time
 
     AIN0 = 0        # Both need to be imported
-    GPIO17 = 17     # from constants when used
+    GPIO16 = 16     # from constants when used
 
 
     def loop():
-        photoResistor = PhotoResistor(AIN0, GPIO17)
+        photoResistor = PhotoResistor(AIN0, GPIO16)
         while True:
             print(photoResistor.read())
             time.sleep(1)

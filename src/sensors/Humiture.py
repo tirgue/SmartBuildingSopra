@@ -126,13 +126,13 @@ if __name__ == "__main__":
     import time
     from datetime import datetime
 
-    GPIO18 = 18     # Need to be imported from constants when used
+    GPIO24 = 24     # Need to be imported from constants when used
 
     def setup():
         GPIO.setmode(GPIO.BCM)
     
     def loop():
-        humiture = Humiture(GPIO18)
+        humiture = Humiture(GPIO24)
         while True:
             humidity, temperature = humiture.readHumidityAndTemperature()
 
