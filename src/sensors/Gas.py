@@ -2,6 +2,7 @@ try:
     from . import PCF8591 as ADC
 except:
     import PCF8591 as ADC
+from typing import Dict, List
 import RPi.GPIO as GPIO
 import time
 import math 
@@ -14,7 +15,7 @@ class GAS(Enum):
 
 class Gas():
 
-    CALIBARAION_SAMPLE_TIMES=50
+    CALIBRATION_SAMPLE_TIMES=50
     CALIBRATION_SAMPLE_INTERVAL=100
     READ_SAMPLE_INTERVAL=20
     READ_SAMPLE_TIMES=5
@@ -22,16 +23,25 @@ class Gas():
     RL_VALUE=5
     RO_CLEAN_AIR_FACTOR=9.83
 
-    LPGCurve = [2.3,0.21,-0.47]
-    COCurve = [2.3,0.72,-0.34]
-    SmokeCurve = [2.3,0.53,-0.44]
+    LPGCurve = {
+        "a": -0.47,
+        "b": 1.31,
+    }
+    COCurve = {
+        "a": -0.32,
+        "b": 1.45,
+    }
+    SmokeCurve = {
+        "a": -0.5,
+        "b": 1.78,
+    }
 
     Ro = 10
 
-    def __init__(self, analogChannel, digitalChannel):
+    def __init__(self, analogChannel: int, digitalChannel: int):
         self.analogChannel = analogChannel
         self.digitalChannel = digitalChannel
-        GPIO.setup(analogChannel, GPIO.IN)
+        GPIO.setup(digitalChannel, GPIO.IN)
         print("Calibrating Gas Sensor...")
         self.Ro = self.calibrate()
         print("Calibration done, Ro :", self.Ro, "k")
@@ -41,29 +51,30 @@ class Gas():
         return v
 
     def calibrate(self):
-        val = 0
+        sensorValue = 0
 
-        for _ in range(self.CALIBARAION_SAMPLE_TIMES):
-            val += self.__resistanceCalculation__(self.read())
+        for _ in range(self.CALIBRATION_SAMPLE_TIMES):
+            sensorValue += self.read()
             time.sleep(self.CALIBRATION_SAMPLE_INTERVAL/1000)
 
-        val = val/self.CALIBARAION_SAMPLE_TIMES
-        val = val/self.RO_CLEAN_AIR_FACTOR
-        return val;   
+        sensorValue /= self.CALIBRATION_SAMPLE_TIMES
+        rs = ((3.3*10)/sensorValue)-10
+        return rs / self.RO_CLEAN_AIR_FACTOR
 
     def readRs(self):
-        rs = 0
-
+        sensorValue = 0
         for _ in range(self.READ_SAMPLE_TIMES):
-            rs += self.__resistanceCalculation__(self.read())
+            sensorValue += self.read()
             time.sleep(self.READ_SAMPLE_INTERVAL/1000)
-        
-        rs = rs/self.READ_SAMPLE_TIMES
-        
-        return rs;  
 
-    def getGasConcentration(self, gasId):
+        sensorValue /= self.READ_SAMPLE_TIMES
+        rs = ((3.3*10)/sensorValue)-10
+
+        return rs
+
+    def getGasConcentration(self, gasId: GAS):
         ratioRsRo = self.readRs()/self.Ro
+        ratioRsRo = math.log10(ratioRsRo)
         if gasId == GAS.LPG :
             return self.getConcentration(ratioRsRo, self.LPGCurve)
         if gasId == GAS.CO :
@@ -73,17 +84,17 @@ class Gas():
         
         return 0
 
-    def getConcentration(self, rationRsRo, pcurve):
-        return pow((math.log10(rationRsRo) - pcurve[1]) / pcurve[2] + pcurve[0], 10)
+    def getConcentration(self, rationRsRo: float, pcurve: Dict):
+        gasRatio = (rationRsRo - pcurve.get("b"))/pcurve.get("a")
+        ppm = math.pow(10, gasRatio)
 
-    def __resistanceCalculation__(self, rawAdc):
-        return self.RL_VALUE*(1023-rawAdc)/rawAdc
+        return ppm
 
 
 if __name__ == "__main__":
     from datetime import datetime
 
-    AIN1 = 1
+    AIN2 = 2
     GPIO25 = 25
 
     def setup():
@@ -91,7 +102,7 @@ if __name__ == "__main__":
         ADC.setup(0x48)
 
     def loop():
-        gasSensor = Gas(AIN1, GPIO25)
+        gasSensor = Gas(AIN2, GPIO25)
         while True:
             co = gasSensor.getGasConcentration(GAS.CO)
             lpg = gasSensor.getGasConcentration(GAS.LPG)
