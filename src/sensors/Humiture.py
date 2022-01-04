@@ -2,15 +2,19 @@ import RPi.GPIO as GPIO
 import time
 import json
 import datetime
+import os
 
 class Humiture():
-    def __init__(self, digitalChannel):
+    def __init__(self):
         """Initialise a new humiture sensor
 
         Args:
             digitalChannel (int): the number of GPIO of the Raspberry PI on which the sensor is pluged on
         """
-        self.digitalChannel = digitalChannel
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.digitalChannel = config['Capteurs']['Humiditure']['GPIO']
 
     def read(self):
         """Read the input and return the raw value"""
@@ -126,13 +130,12 @@ if __name__ == "__main__":
     import time
     from datetime import datetime
 
-    GPIO24 = 24     # Need to be imported from constants when used
-
+    
     def setup():
         GPIO.setmode(GPIO.BCM)
     
     def loop():
-        humiture = Humiture(GPIO24)
+        humiture = Humiture()
         while True:
             humidity, temperature = humiture.readHumidityAndTemperature()
 

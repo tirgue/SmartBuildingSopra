@@ -7,10 +7,11 @@ import RPi.GPIO as GPIO
 import time
 import datetime
 import json
+import os
 
 class PhotoResistor():
     	
-    def __init__(self, analogChannel, digitalChannel):
+    def __init__(self):
         """Initialise a new analog PhotoResistor sensor
 
         Args:
@@ -19,9 +20,12 @@ class PhotoResistor():
 
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
-        self.analogChannel = analogChannel
-        self.digitalChannel = digitalChannel
-        GPIO.setup(digitalChannel, GPIO.IN)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.analogChannel = config['Capteurs']['PhotoResistor']['AIN']
+            self.digitalChannel = config['Capteurs']['PhotoResistor']['GPIO']
+            GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
         """Read the input and return the raw value"""
@@ -42,12 +46,11 @@ def setup():
 if __name__ == "__main__":
     import time
 
-    AIN0 = 0        # Both need to be imported
-    GPIO16 = 16     # from constants when used
+
 
 
     def loop():
-        photoResistor = PhotoResistor(AIN0, GPIO16)
+        photoResistor = PhotoResistor()
         while True:
             print(photoResistor.read())
             time.sleep(1)

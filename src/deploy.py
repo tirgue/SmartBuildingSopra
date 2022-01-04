@@ -38,10 +38,9 @@ def iothub_send_message():
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(dir_path + '/config/' + 'config.json') as file:
             config = json.load(file)
-            print(config['Capteurs']['AnalogTemperature'])
-            analogTemperature = AnalogTemperature(config['Capteurs']['AnalogTemperature']['AIN'], config['Capteurs']['AnalogTemperature']['GPIO'])
-            photoResistor = PhotoResistor(config['Capteurs']['PhotoResistor']['AIN'], config['Capteurs']['PhotoResistor']['GPIO'])
-            humiditure = Humiture(config['Capteurs']['Humiditure']['GPIO'])
+            analogTemperature = AnalogTemperature()
+            photoResistor = PhotoResistor()
+            humiditure = Humiture()
             barometer = Barometer()
             while True:
                 # Build the message with simulated telemetry values.
@@ -50,8 +49,9 @@ def iothub_send_message():
                 temperatures = analogTemperature.export()
                 temperatureAndHumiditure = humiditure.export()
                 resistancePhotoResitor = photoResistor.export()
+                pressure = barometer.export()
 
-                dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor,barometer]
+                dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor,pressure]
 
                 for d in dataToSendToIotHub:
                     message = Message(d)

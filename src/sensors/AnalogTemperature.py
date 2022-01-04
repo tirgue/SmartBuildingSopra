@@ -6,9 +6,10 @@ import RPi.GPIO as GPIO
 import math
 import json
 import datetime
+import os
 
 class AnalogTemperature():
-    def __init__(self, analogChannel, digitalChannel):
+    def __init__(self):
         """Initialise a new analog temperature sensor
 
         Args:
@@ -17,9 +18,12 @@ class AnalogTemperature():
 
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
-        self.analogChannel = analogChannel
-        self.digitalChannel = digitalChannel
-        GPIO.setup(digitalChannel, GPIO.IN)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.analogChannel = config['Capteurs']['AnalogTemperature']['AIN']
+            self.digitalChannel = config['Capteurs']['AnalogTemperature']['GPIO']
+            GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
         """Read the input and return the raw value"""
@@ -53,15 +57,13 @@ if __name__ == "__main__":
     import time
     from datetime import datetime
 
-    AIN1 = 1        # Both need to be imported
-    GPIO17 = 17     # from constants when used
-
+   
     def setup():
         GPIO.setmode(GPIO.BCM)
         ADC.setup(0x48)
 
     def loop():
-        analogTemperature = AnalogTemperature(AIN1, GPIO17)
+        analogTemperature = AnalogTemperature()
         while True:
             kelvin = round(analogTemperature.readKelvin(), 2)
             celcius = round(analogTemperature.readCelcius(), 2)
