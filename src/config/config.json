@@ -23,8 +23,8 @@
         },
         "Gas" : {
             "name":"Gas",
-            "AIN": "",
-            "GPIO": "",
+            "AIN": 2,
+            "GPIO": 25,
             "OUT": "" 
         },
         "Sound" : {

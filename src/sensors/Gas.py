@@ -6,6 +6,9 @@ from typing import Dict, List
 import RPi.GPIO as GPIO
 import time
 import math 
+import os
+import json
+import datetime
 from enum import Enum
 
 class GAS(Enum):
@@ -38,13 +41,16 @@ class Gas():
 
     Ro = 10
 
-    def __init__(self, analogChannel: int, digitalChannel: int):
-        self.analogChannel = analogChannel
-        self.digitalChannel = digitalChannel
-        GPIO.setup(digitalChannel, GPIO.IN)
-        print("Calibrating Gas Sensor...")
-        self.Ro = self.calibrate()
-        print("Calibration done, Ro :", self.Ro, "k")
+    def __init__(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.analogChannel = config['Capteurs']['Gas']['AIN']
+            self.digitalChannel = config['Capteurs']['Gas']['GPIO']
+            GPIO.setup(self.digitalChannel, GPIO.IN)
+            print("Calibrating Gas Sensor...")
+            self.Ro = self.calibrate()
+            print("Calibration done, Ro :", self.Ro, "k")
 
     def read(self):
         v = ADC.read(self.analogChannel)
@@ -89,20 +95,23 @@ class Gas():
         ppm = math.pow(10, gasRatio)
 
         return ppm
+    
+    def export(self):
+        ts = datetime.datetime.now().timestamp()
+        return json.dumps({"CO": self.getGasConcentration(GAS.CO),"LPG": self.getGasConcentration(GAS.LPG), "Smoke": self.getGasConcentration(GAS.SMOKE), "Timestamp": ts})
 
 
 if __name__ == "__main__":
     from datetime import datetime
 
-    AIN2 = 2
-    GPIO25 = 25
+
 
     def setup():
         GPIO.setmode(GPIO.BCM)
         ADC.setup(0x48)
 
     def loop():
-        gasSensor = Gas(AIN2, GPIO25)
+        gasSensor = Gas()
         while True:
             co = gasSensor.getGasConcentration(GAS.CO)
             lpg = gasSensor.getGasConcentration(GAS.LPG)
