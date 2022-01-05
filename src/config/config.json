@@ -32,6 +32,12 @@
             "AIN": "",
             "GPIO": "",
             "OUT": "" 
+        },
+        "RGB Led" : {
+            "name":"RGB Led",
+            "GPIO-1": 13,
+            "GPIO-2": 19,
+            "GPIO-3": 26 
         }
     }
 }
