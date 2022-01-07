@@ -28,9 +28,9 @@ class RGB_Led():
 			self.p_G = GPIO.PWM(self.pins['pin_G'], 2000)
 			self.p_B = GPIO.PWM(self.pins['pin_B'], 2000)
 			
-			self.p_R.start(0)      # Initial duty Cycle = 0(leds off)
-			self.p_G.start(0)
-			self.p_B.start(0)
+			self.p_R.start(100)      # Initial duty Cycle = 0(leds off)
+			self.p_G.start(100)
+			self.p_B.start(100)
 
 
 	def off(self):
@@ -41,12 +41,12 @@ class RGB_Led():
 
 	def setColor(self,r,g,b): 
 		
-		self.p_R.ChangeDutyCycle(r)     # Change duty cycle
-		self.p_G.ChangeDutyCycle(g)
-		self.p_B.ChangeDutyCycle(b)
+		self.p_R.ChangeDutyCycle(100-r)     # Change duty cycle
+		self.p_G.ChangeDutyCycle(100-g)
+		self.p_B.ChangeDutyCycle(100-b)
 
 	def loop(self):
-		self.setColor(0, 0, 0) #   red color
+		self.setColor(100, 0, 0) #   red color
 		time.sleep(5)   # 1s
 		
 	
@@ -62,5 +62,6 @@ if __name__ == "__main__":
 		
 		led = RGB_Led()
 		led.loop()
+		led.destroy()
 	except KeyboardInterrupt:
 		led.destroy()
