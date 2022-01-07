@@ -13,7 +13,7 @@ class RGB_Led():
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		with open(dir_path + '/../config/' + 'config.json') as file:
 			config = json.load(file)
-			#self.colors = [0xFF0000, 0xFFFF00, 0x00FF00] # red, yellow, green
+			self._colorToDisplay = 0
 			self.pins = {
 				'pin_R': config['Capteurs']['RGB Led']['Board-R'], 
 				'pin_G': config['Capteurs']['RGB Led']['Board-G'], 
@@ -44,10 +44,27 @@ class RGB_Led():
 		self.p_R.ChangeDutyCycle(100-r)     # Change duty cycle
 		self.p_G.ChangeDutyCycle(100-g)
 		self.p_B.ChangeDutyCycle(100-b)
+	
+	@property
+	def colorToDisplay(self):
+		return self._colorToDisplay
+
+	@colorToDisplay.setter
+	def colorToDisplay(self, value):
+			if(value in [0,1,2,3]):
+				self._colorToDisplay = value
 
 	def loop(self):
-		self.setColor(100, 0, 0) #   red color
-		time.sleep(5)   # 1s
+		while True:
+			if(self.colorToDisplay == 0) : 
+				self.setColor(100,100,100)
+			elif(self.colorToDisplay == 1) :
+				self.setColor(0, 100, 0) #   green color
+			elif(self.colorToDisplay == 2) :
+				self.setColor(100, 100, 0) #   yellow color
+			elif(self.colorToDisplay == 3) :
+				self.setColor(100, 0, 0) #   red color
+			time.sleep(3)   # 1s
 		
 	
 	def destroy(self):
