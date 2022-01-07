@@ -2,7 +2,7 @@
     "Capteurs" : {
         "AnalogTemperature" : {
             "AIN": 1,
-            "GPIO": 17,
+            "GPIO": 13,
             "OUT": ""
         },
         "Barometer" : {
@@ -35,9 +35,9 @@
         },
         "RGB Led" : {
             "name":"RGB Led",
-            "GPIO-1": 13,
-            "GPIO-2": 19,
-            "GPIO-3": 26 
+            "Board-R": 11,
+            "Board-G": 13,
+            "Board-B": 15 
         }
     }
 }
