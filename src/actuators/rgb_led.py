@@ -13,13 +13,13 @@ class RGB_Led():
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		with open(dir_path + '/../config/' + 'config.json') as file:
 			config = json.load(file)
-			self._colorToDisplay = 0
+			self._colorToDisplay = 1
 			self.pins = {
 				'pin_R': config['Capteurs']['RGB Led']['Board-R'], 
 				'pin_G': config['Capteurs']['RGB Led']['Board-G'], 
 				'pin_B': config['Capteurs']['RGB Led']['Board-B']
 			}
-			GPIO.setmode(GPIO.BOARD)       # Numbers GPIOs by physical location
+			GPIO.setmode(GPIO.BCM)       # Numbers GPIOs by physical location
 			for i in self.pins:
 				GPIO.setup(self.pins[i], GPIO.OUT)   # Set pins' mode is output
 				GPIO.output(self.pins[i], GPIO.HIGH) # Set pins to high(+3.3V) to off led
@@ -34,7 +34,7 @@ class RGB_Led():
 
 
 	def off(self):
-		GPIO.setmode(GPIO.BOARD)
+		GPIO.setmode(GPIO.BCM)
 		for i in self.pins:
 			GPIO.setup(self.pins[i], GPIO.OUT)   # Set pins' mode is output
 			GPIO.output(self.pins[i], GPIO.HIGH)    # Turn off all leds

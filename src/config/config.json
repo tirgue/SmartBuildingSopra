@@ -1,43 +1,68 @@
 {
-    "Capteurs" : {
-        "AnalogTemperature" : {
-            "AIN": 1,
-            "GPIO": 13,
-            "OUT": ""
-        },
-        "Barometer" : {
-            "AIN": "",
-            "GPIO": "",
-            "OUT": ""
-        },
-        "Humiditure" : {
-            "AIN": "",
-            "GPIO": 24,
-            "OUT": "" 
-        },
-        "PhotoResistor" : {
-            "name":"PhotoResistor",
-            "AIN": 0,
-            "GPIO": 16,
-            "OUT": "" 
-        },
-        "Gas" : {
-            "name":"Gas",
-            "AIN": 2,
-            "GPIO": 25,
-            "OUT": "" 
-        },
-        "Sound" : {
-            "name":"Sound",
-            "AIN": "",
-            "GPIO": "",
-            "OUT": "" 
-        },
-        "RGB Led" : {
-            "name":"RGB Led",
-            "Board-R": 11,
-            "Board-G": 13,
-            "Board-B": 15 
-        }
+  "Hostname": "Raspberry Pi Zero 1",
+  "Capteurs": {
+    "AnalogTemperature": {
+      "Nom": "AnalogTemperature",
+      "Type": "Temperature",
+      "ID": "salleprojet.temperature",
+      "Unit": "°C",
+      "Ratio": "10^0",
+      "AIN": 1,
+      "GPIO": 13
+    },
+    "Barometer": {
+      "Nom": "Barometer",
+      "Type": "Pression",
+      "ID": "salleprojet.pression",
+      "Unit": "Pa",
+      "Ratio": "10^0",
+      "AIN": "",
+      "GPIO": ""
+    },
+    "Humiditure": {
+      "Nom": "Humiditure",
+      "Type": "Humidité",
+      "ID": "salleprojet.humidité",
+      "Unit": "%",
+      "Ratio": "10^0",
+      "AIN": "",
+      "GPIO": 24
+    },
+    "PhotoResistor": {
+      "Nom": "PhotoResistor",
+      "Type": "Luminosité",
+      "ID": "salleprojet.luminosité",
+      "Unit": "-",
+      "Ratio": "-",
+      "AIN": 0,
+      "GPIO": 16
+    },
+    "Gas": {
+      "Nom": "Gas",
+      "Type": "Gas",
+      "ID": "salleprojet.gas",
+      "Unit": "ppm",
+      "Ratio": "10^0",
+      "AIN": 2,
+      "GPIO": 25
+    },
+    "Sound": {
+      "Sound": {
+        "Nom": "Sound",
+        "Type": "Son",
+        "ID": "salleprojet.son",
+        "Unit": "-",
+        "Ratio": "-",
+        "AIN": "",
+        "GPIO": ""
+      }
+    },
+    "RGB Led": {
+      "Nom": "RGB Led",
+      "ID": "salleprojet.rgbLed",
+      "Board-R": 17,
+      "Board-G": 27,
+      "Board-B": 22
     }
+  }
 }
