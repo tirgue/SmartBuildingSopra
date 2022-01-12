@@ -6,4 +6,4 @@ activate
 cd src/api/
 export FLASK_APP=api
 export FLASK_ENV=development
-python3 server.py
+python3 api.py
