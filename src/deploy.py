@@ -9,6 +9,8 @@ from sensors.PhotoResistor import PhotoResistor
 from sensors.Gas import Gas
 from constants.ADCPins import *
 from constants.GPIOPins import *
+import zmq
+
 try:
     from sensors import PCF8591 as ADC
 except:
@@ -18,6 +20,7 @@ from azure.iot.device import IoTHubDeviceClient, Message
  
 CONNECTION_STRING = "HostName=test-hub-iot-sopra.azure-devices.net;DeviceId=test;SharedAccessKey=TNR/5rzIlvSpR5bwEQTFraUCEW2SY2G4vcuKfMltQ5I="
 SEND_DELAY = 5 
+PORT = 10219
 
 
 
@@ -42,7 +45,7 @@ def iothub_send_message():
             analogTemperature = AnalogTemperature()
             photoResistor = PhotoResistor()
             humiditure = Humiture()
-            barometer = Barometer()
+            #barometer = Barometer()
             gas = Gas()
             while True:
                 # Build the message with simulated telemetry values.
@@ -51,10 +54,10 @@ def iothub_send_message():
                 temperatures = analogTemperature.export()
                 temperatureAndHumiditure = humiditure.export()
                 resistancePhotoResitor = photoResistor.export()
-                pressure = barometer.export()
+                #pressure = barometer.export()
                 gasMeasure = gas.export()
 
-                dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor,pressure,gasMeasure]
+                dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor,gasMeasure]
 
                 for d in dataToSendToIotHub:
                     message = Message(d)
@@ -67,10 +70,28 @@ def iothub_send_message():
  
  
     except KeyboardInterrupt:
-        print ( "IoTHubClient stopped" )
+        raise
  
+def handleConfigUpdate():
 
+    try:
+        while True:
+            #  Wait for next request from client
+            message = socket.recv()
+            print("Received request: %s" % message)
+            #  Send reply back to client
+            socket.send_string("Ok")
+    except : 
+        raise
 
 if __name__ == '__main__':
 
-    iothub_send_message()
+    try:
+        context = zmq.Context()
+        socket = context.socket(zmq.REP)
+        socket.bind("tcp://*:{}".format(PORT))
+        iothub_send_message()
+    except Exception as e: 
+        print("kill")
+    finally : 
+        socket.close()

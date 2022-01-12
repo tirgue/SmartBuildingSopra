@@ -4,12 +4,18 @@ import os
 import sys
 import RPi.GPIO as GPIO
 import platform
-
-
+import zmq
+from threading import Thread
 from werkzeug.exceptions import BadRequest
 
+HOST = '127.0.0.1'
+PORT = 10219
+TASK_SOCKET = zmq.Context().socket(zmq.REQ)
+TASK_SOCKET.connect('tcp://{}:{}'.format(HOST, PORT))
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
+
+
 
 def getConfigFile():
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -43,6 +49,8 @@ def getConfig():
 def postConfig():
     try : 
         writeConfigFile(request.get_json())
+        TASK_SOCKET.send(b"Test")
+        results = TASK_SOCKET.recv()
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     except BadRequest:
         abort(400,description="Le JSON est mal formaté")
@@ -103,3 +111,9 @@ def getStatus():
     except Exception as e : 
         print(str(e))
         abort(500,description="Une erreur est survenue")
+
+if __name__ == "__main__":
+    try : 
+        app.run()
+    except :
+        TASK_SOCKET.close()
