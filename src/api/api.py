@@ -4,14 +4,12 @@ import os
 import sys
 import RPi.GPIO as GPIO
 import platform
-import zmq
 from threading import Thread
 from werkzeug.exceptions import BadRequest
 
-HOST = '127.0.0.1'
-PORT = 10219
-TASK_SOCKET = zmq.Context().socket(zmq.REQ)
-TASK_SOCKET.connect('tcp://{}:{}'.format(HOST, PORT))
+
+
+
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
@@ -49,17 +47,16 @@ def getConfig():
 def postConfig():
     try : 
         writeConfigFile(request.get_json())
-        TASK_SOCKET.send(b"Test")
-        results = TASK_SOCKET.recv()
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     except BadRequest:
         abort(400,description="Le JSON est mal formaté")
     except Exception as e:
+        print(str(e))
         abort(500,description="Une erreur est survenue")
  
 
 
-@app.route("/api/config/<name>",methods=['GET'])
+@app.route("/api/config/sensor/<name>",methods=['GET'])
 def getConfigByName(name):
     try : 
         config = getConfigFile()
@@ -70,11 +67,27 @@ def getConfigByName(name):
     except Exception : 
         abort(500,description="Une erreur est survenue")
 
-@app.route("/api/config/<name>", methods=['POST'])
-def postConfigByName(name):
+@app.route("/api/config/sensor", methods=['POST'])
+def postConfigByName():
     try :
         config = getConfigFile()
-        config['Capteurs'][name] = request.get_json()
+        config['Capteurs'].update(request.get_json())
+        writeConfigFile(config)
+        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+    except BadRequest:
+        abort(400,description="Le JSON est mal formaté")
+    except Exception as e:
+        print(str(e))
+        abort(500,description="Une erreur est survenue")
+
+@app.route("/api/config/sensor/<name>", methods=['DELETE'])
+def deleteConfigByName(name):
+    try :
+        config = getConfigFile()
+        for key, value in list(config['Capteurs'].items()):
+            if (key == name):
+                del config['Capteurs'][name]
+                
         writeConfigFile(config)
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     except BadRequest:
@@ -113,7 +126,11 @@ def getStatus():
         abort(500,description="Une erreur est survenue")
 
 if __name__ == "__main__":
-    try : 
+    
+
+    try :
         app.run()
-    except :
-        TASK_SOCKET.close()
+    except Exception as e :
+        print(str(e))
+
+
