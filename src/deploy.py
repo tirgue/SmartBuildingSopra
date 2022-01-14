@@ -22,6 +22,7 @@ CONNECTION_STRING = "HostName=test-hub-iot-sopra.azure-devices.net;DeviceId=test
 SEND_DELAY = 5 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 lock = threading.Lock()
+instance_sensor = []
 
 
 
@@ -41,33 +42,27 @@ def iothub_send_message():
     try:
         client = iothub_client_init()
         setup()
+        initialiseSensor()
        
-        global analogTemperature,photoResistor,humiditure,gas
-        analogTemperature = AnalogTemperature()
-        photoResistor = PhotoResistor()
-        humiditure = Humiture()
-        #barometer = Barometer()
-        gas = Gas()
+        global instance_sensor
+        
         while True:
             lock.acquire()
-            # Build the message with simulated telemetry values.                
-            temperatures = analogTemperature.export()
-            temperatureAndHumiditure = humiditure.export()
-            resistancePhotoResitor = photoResistor.export()
-            #pressure = barometer.export()
-            gasMeasure = gas.export()
+           
 
-            dataToSendToIotHub = [temperatures,temperatureAndHumiditure,resistancePhotoResitor,gasMeasure]
+            dataToSendToIotHub = []
+            for e in instance_sensor : 
+                dataToSendToIotHub.append(e.export())
 
             for d in dataToSendToIotHub:
                 message = Message(d)
                 # Send the message.
                 print( "Sending message: {}".format(message) )
-                client.send_message(message)
+                #client.send_message(message)
                 print ( "Message successfully sent" )
-            time.sleep(SEND_DELAY)
+            
             lock.release()
- 
+            time.sleep(SEND_DELAY)
  
     except :
         raise
@@ -76,28 +71,40 @@ def handleConfigUpdate():
 
     try:
         InitialStamp = os.stat(dir_path + '/config/config.json').st_mtime
-
-
+        
         while True:
             currentStamp = os.stat(dir_path + '/config/config.json').st_mtime
-            print("On Test")
             if InitialStamp != currentStamp:
-            
                 lock.acquire()
-                print("On entre")
-                global analogTemperature,photoResistor,humiditure,gas
-                
-                del analogTemperature,photoResistor,humiditure,gas
-                analogTemperature = AnalogTemperature()
-                photoResistor = PhotoResistor()
-                humiditure = Humiture()
-                #barometer = Barometer()
-                gas = Gas()
+                initialiseSensor()
                 InitialStamp = currentStamp
                 lock.release()
             time.sleep(1)
     except : 
         raise
+
+"""
+To initialize the right sensor instance
+Have to be maintened frequently
+"""
+def initialiseSensor():
+    with open(dir_path + '/config/' + 'config.json') as file:
+        config = json.load(file)
+        available_sensor = ["AnalogTemperature","Barometer","PhotoResistor","Gas","Humiditure"]
+        global instance_sensor
+        instance_sensor.clear()
+
+        if "AnalogTemperature" in config["Capteurs"]:
+            instance_sensor.append(AnalogTemperature())
+        if "PhotoResistor" in config["Capteurs"]:
+            instance_sensor.append(PhotoResistor())
+        if "Gas" in config["Capteurs"]:
+            instance_sensor.append(Gas())
+        if "Humiture" in config["Capteurs"]:
+            instance_sensor.append(Humiture())
+
+
+
 
 if __name__ == '__main__':
 

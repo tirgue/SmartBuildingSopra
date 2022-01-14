@@ -97,8 +97,12 @@ class Gas():
         return ppm
     
     def export(self):
-        ts = datetime.datetime.now().timestamp()
-        return json.dumps({"CO": self.getGasConcentration(GAS.CO),"LPG": self.getGasConcentration(GAS.LPG), "Smoke": self.getGasConcentration(GAS.SMOKE), "Timestamp": ts})
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"CO": self.getGasConcentration(GAS.CO),"LPG": self.getGasConcentration(GAS.LPG), "Smoke": self.getGasConcentration(GAS.SMOKE), "Timestamp": ts})
+        except:
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"CO": None,"LPG": None, "Smoke": None, "Timestamp": ts})
 
 
 if __name__ == "__main__":

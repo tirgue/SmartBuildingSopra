@@ -19,8 +19,8 @@
       "AIN": "",
       "GPIO": ""
     },
-    "Humiditure": {
-      "Nom": "Humiditure",
+    "Humiture": {
+      "Nom": "Humiture",
       "Type": "Humidité",
       "ID": "salleprojet.humidité",
       "Unit": "%",

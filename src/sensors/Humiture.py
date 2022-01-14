@@ -14,7 +14,7 @@ class Humiture():
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(dir_path + '/../config/' + 'config.json') as file:
             config = json.load(file)
-            self.digitalChannel = config['Capteurs']['Humiditure']['GPIO']
+            self.digitalChannel = config['Capteurs']['Humiture']['GPIO']
 
     def read(self):
         """Read the input and return the raw value"""
@@ -121,9 +121,13 @@ class Humiture():
         return self.read()
 
     def export(self):
-        ts = datetime.datetime.now().timestamp()
-        humidity, temperature = self.readHumidityAndTemperature()
-        return json.dumps({"Humidity": humidity,"Temperature Celsius": temperature,"Timestamp" : ts})
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            humidity, temperature = self.readHumidityAndTemperature()
+            return json.dumps({"Humidity": humidity,"Temperature Celsius": temperature,"Timestamp" : ts})
+        except :
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Humidity": None,"Temperature Celsius": None,"Timestamp" : ts})
 
 
 if __name__ == "__main__":

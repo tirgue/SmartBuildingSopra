@@ -33,8 +33,12 @@ class PhotoResistor():
 
 
     def export(self):
-        ts = datetime.datetime.now().timestamp()
-        return json.dumps({"Resistance": self.read(), "Timestamp": ts})
+        try :
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Resistance": self.read(), "Timestamp": ts})
+        except :
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Resistance": None, "Timestamp": ts})
 
 
 

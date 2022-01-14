@@ -46,8 +46,12 @@ class AnalogTemperature():
         return (self.readCelcius() * 9/5) + 32
 
     def export(self):
-        ts = datetime.datetime.now().timestamp()
-        return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "Timestamp": ts})
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "Timestamp": ts})
+        except : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "Timestamp": ts})
 
 
 def setup():

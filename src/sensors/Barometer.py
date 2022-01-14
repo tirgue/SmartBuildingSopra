@@ -18,8 +18,12 @@ class Barometer():
         return self.sensor.read_pressure()	# Read pressure to veriable pressure
     
     def export(self):
-        ts = datetime.datetime.now().timestamp()
-        return json.dumps({"Temperature Celsius": self.readTemperature(),"Pressure": self.readPressure(), "Timestamp": ts})
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Celsius": self.readTemperature(),"Pressure": self.readPressure(), "Timestamp": ts})
+        except : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Celsius": None,"Pressure": None, "Timestamp": ts})
 
 
 
