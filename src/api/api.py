@@ -40,8 +40,12 @@ def resource_not_found(e):
 
 @app.route("/api/config", methods=['GET'])
 def getConfig():
-    config = getConfigFile()
-    return jsonify(config)
+    try : 
+        config = getConfigFile()
+        return jsonify(config)
+    except Exception as e:
+        print(str(e))
+        abort(500,description="Une erreur est survenue") 
 
 @app.route("/api/config", methods=['POST'])
 def postConfig():
@@ -90,8 +94,6 @@ def deleteConfigByName(name):
                 
         writeConfigFile(config)
         return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
-    except BadRequest:
-        abort(400,description="Le JSON est mal formaté")
     except Exception as e:
         print(str(e))
         abort(500,description="Une erreur est survenue")

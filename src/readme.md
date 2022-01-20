@@ -35,23 +35,284 @@ Cette liste est amenée à évoluer dans le futur
 
 ## Collecte des données
 
+Pour collecter des données (par exemple la température) plusieurs étapes sont indispensables, tout d'abord il faut acquérir le/les capteurs adéquats.
+
+Ensuite il faut créer une classe permettant de lire les données et de les exporter. 
+
+```python
+
+class AnalogTemperature():
+
+    """Initialisation d'un nouveau capteur de temperature"""
+    def __init__(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        """recuperation de la configuration du capteur à partir du fichier config.json (connectique)"""
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.analogChannel = config['Capteurs']['AnalogTemperature']['AIN']
+            self.digitalChannel = config['Capteurs']['AnalogTemperature']['GPIO']
+            GPIO.setup(self.digitalChannel, GPIO.IN)
+
+    def read(self):
+        """Lecture de l'input et retourne une valeur brute"""
+        return ADC.read(self.analogChannel) 
+
+    def readKelvin(self):
+        """Lecture de la valeur brute puis conversion en temperature Kelvin"""
+        analogVal = self.read()
+        Vr = 5 * float(analogVal) / 255
+        Rt = 10000 * Vr / (5 - Vr)
+        temp = 1/(((math.log(Rt / 10000)) / 3950) + (1 / (273.15+25)))
+        return temp
+
+    def readCelcius(self):
+        """Lecture de la temperature en Kelvin puis conversion en temperature Celsius"""
+        return self.readKelvin() - 273.15
+
+    def readFahrenheit(self):
+        """Lecture de la temperature en Celsius puis conversion en temperature Fahrenheit"""
+        return (self.readCelcius() * 9/5) + 32
+
+    def export(self):
+        """ Permet d'exporter les données sous format json et DOIT être definie"""
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "Timestamp": ts})
+        except : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "Timestamp": ts})
+
+
+```
+
+Une fois la classe créée, il faut ajouter le capteur dans la configuration `config/config.json` soit manuellement, soit via l'API (cf. partie Configuration du système). Dans cet exemple, le capteur est relié au port analogique 1 et au port GPIO 13.
+
+```json
+"AnalogTemperature": {
+      "Nom": "AnalogTemperature",
+      "Type": "Temperature",
+      "ID": "salleprojet.temperature",
+      "Unit": "°C",
+      "Ratio": "10^0",
+      "AIN": 1, 
+      "GPIO": 13
+}
+```
+
+Ensuite dans le fichier `deploy.py`, il faut mapper l'objet json ajouté avec l'objet python correspondant. Cette etape permettra d'instancier automatiquement le bon objet en fonction du contenu du fichier de configuration.
+
+```python
+def initialiseSensor():
+    with open(dir_path + '/config/' + 'config.json') as file:
+        config = json.load(file)
+        available_sensor = ["AnalogTemperature","Barometer","PhotoResistor","Gas","Humiditure"]
+        global instance_sensor
+        instance_sensor.clear()
+
+        if "AnalogTemperature" in config["Capteurs"]:
+            instance_sensor.append(AnalogTemperature()) # Objet correspondant
+        if "PhotoResistor" in config["Capteurs"]:
+            instance_sensor.append(PhotoResistor())
+        if "Gas" in config["Capteurs"]:
+            instance_sensor.append(Gas())
+        if "Humiture" in config["Capteurs"]:
+            instance_sensor.append(Humiture())
+```
+Après cette etape il suffit de lancer le script run.sh et les données seront collectées et envoyées dans le cloud Azure.
+
 ## Transmission et stockage dans le cloud 
 
-Iot Hub
+Comme indiqué précedemment, toutes les données collectées sont envoyées dans le cloud Azure pour y être stocker. Pour ce faire, il est necessaire de configurer certains services.
 
-Stockage blob
+### Iot Hub
 
-puis à voir
+Iot Hub est le service Azure qui permet de collecter les données envoyées par les Raspberry, cependant ce service n'est pas capable de stocker directement les données. Il faudra donc l'associer au service de stockage de la plateforme Azure.
+
+Pour configurer Iot Hub, dans un premier temps, il faut créer un hub Iot depuis le portail Azure. Ensuite il faut créer un appareil, cette étape est obligatoire puisqu'elle permet de récupérer un token d'accès qui permet l'envoi des données dans le hub.
+
+Une fois l'appareil créer, il faut donc récuperer le token et l'ajouter dans le fichier `deploy.py`. **Attention à ne pas relever publiquement ce token, sinon tout le monde pourra envoyer des données sur le hub**.
+
+```python
+CONNECTION_STRING = "HostName=test-hub-iot-sopra.azure-devices.net;DeviceId=test;SharedAccessKey=XXXXXXXXXXXXXXXXXXXXX"
+```
+
+Pour plus de détails ou en cas de difficultés, veuillez vous réferez à la documentation de Microsoft : https://docs.microsoft.com/fr-fr/azure/iot-hub/iot-hub-create-through-portal
+
+### Azure Storage
+
+Pour stocker de manière permanentes les données, il faut ensuite configurer le service de stockage.
+
+La première étape consiste à créer un compte de stockage Azure à partir du portail : https://docs.microsoft.com/fr-fr/azure/storage/common/storage-account-create?tabs=azure-portal
+
+Ensuite il faut créer un conteneur pour stocker les données sous format BLOB : https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-portal
+
+Enfin il faut router les messages du Hub Iot vers le stockage Azure : https://docs.microsoft.com/fr-fr/azure/iot-hub/iot-hub-create-through-portal#message-routing-for-an-iot-hub
+
+**Note : Pour la partie requête de routage, si level="critical" ne fonctionne pas, il faut mettre uniquement "true"**
+
+Une fois toutes ces étapes effectuées, les données seront stockées de manière permanentes et pourront être réutilisées.
 
 ## Seuil de données
 
-Seuils de 3 types bon, info, alarm
+Afin qu'il soit le plus simple possible d'interpreter les différentes données, il a été choisi de mettre en place divers seuils. La définition de ces seuils a été faite en partie grâce aux textes de lois officiels et aux diverses réglémentations dans le monde du travail.
 
-Source
+- Bon : Ne représente pas de danger sur le long terme et nécessite pas d'intervention humaine.
+- Info : Peut potentiellement représenter un danger sur le long terme mais une absence d'intervention immédiate n'est pas problématique.
+- Alarm : Dangerosité à court/moyen terme averée, une intervention humaine doit avoir lieu dans les plus brefs délais pour corriger l'anomalie.
+
+| Grandeur mesurée | Categorie                   | Plage de données                                                                                                                                                                                                                                          | Sources                                                                                                                                                                                                                              |
+| ---------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Temperature      | CHSCT Environnement Energie | <ul><li>Bon : 20-22°C</li><li>Info : 22-30°C ou 17-20°C</li><li>Alarm : > 30°C ou < 17°C</li></ul>                                                                                                                                                        | [Lien](https://www.espace-cssct.fr/toutes-les-actualites-du-chsct/quelle-temp%C3%A9rature-maximale-pour-travailler-dans-un-bureau#:~:text=Les%20seuils%20sont%20les%20suivants,travail%20pr%C3%A9sente%20de%20r%C3%A9els%20dangers.) |
+| Humidité         | CHSCT                       | <ul><li>Bon : 40% - 60%</li><li>Info : 20% - 70%</li><li>Alarm : < 20% ou > 70%</li></ul>                                                                                                                                                                 | [Lien](https://www.cchst.ca/oshanswers/phys_agents/thermal_comfort.html)                                                                                                                                                             |
+| Gaz (CO)         | CHSCT                       | <ul><li>Bon : < 10 ppm</li><li>Info : 10 ppm - 50 ppm</li><li>Alarm : > 50 ppm</li></ul>                                                                                                                                                                  | [Lien](https://travail-emploi.gouv.fr/sante-au-travail/prevention-des-risques-pour-la-sante-au-travail/autres-dangers-et-risques/article/monoxyde-de-carbone)                                                                        |
+| Luminosité       | CHSCT Environnement Energie | <ul><li>Couloirs :<ul><li>Bon : 150 lux</li><li>Info : 40 lux</li></ul></li><li>Vestiaires, toilettes :<ul><li>Bon : 200 lux</li><li>Info : 120 lux</li></ul></li><li>Travail de bureau :<ul><li>Bon : 450 lux</li><li>Info : 200 lux</li></ul></li></ul> | [Lien](https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006072050/LEGISCTA000018488932/#LEGISCTA000018532275)                                                                                                              |
+| Intensité sonore | CHSCT                       | <ul><li>Bon : < 65 dB</li><li>Info : 65 dB - 80 dB</li><li>Alarm : > 80 dB</li></ul>                                                                                                                                                                      | [Lien](https://www.pytaudio.com/bruit-au-travail/)                                                                                                                                                                                   |
+
 
 ## Configuration du système
 
-API + thread
+Comme mentionné précédemment, il est possible de modifier la configuration des capteurs manuellement, néanmoins cette méthode est déconseillée. En effet, il est recommandé d'utiliser l'API Flask qui est disponible sur le port 5000 de chaque Raspberry Pi.
+
+Des routes ont été spécialement définies : 
+En supposant l'adresse de la Raspberry soit 127.0.0.1
+
+```
+GET 127.0.0.1:5000/api/config
+
+Retourne : Code HTTP 200 + Le fichier de configuration dans son état actuel
+
+Exemple GET 127.0.0.1:5000/api/config retourne: 
+{
+  "Hostname": "Raspberry Pi Zero 1",
+  "Capteurs": {
+    "AnalogTemperature": {
+      "Nom": "AnalogTemperature",
+      "Type": "Temperature",
+      "ID": "salleprojet.temperature",
+      "Unit": "°C",
+      "Ratio": "10^0",
+      "AIN": 1,
+      "GPIO": 13
+    }
+  }
+}
+
+Code Erreur :  Code HTTP 500 (erreur serveur)
+```
+
+```
+POST 127.0.0.1:5000/api/config
+
+Retourne : Code HTTP 200 + {'success':True}
+
+Exemple POST 127.0.0.1:5000/api/config avec le body: 
+{
+  "Hostname": "Raspberry Pi Zero 1",
+  "Capteurs": {
+    "AnalogTemperature": {
+      "Nom": "AnalogTemperature",
+      "Type": "Temperature",
+      "ID": "salleprojet.temperature",
+      "Unit": "°C",
+      "Ratio": "10^0",
+      "AIN": 1,
+      "GPIO": 13
+    }
+  }
+}
+
+Code Erreur :  
+- Code HTTP 500 (erreur serveur)
+- Code HTTP 400 (JSON mal formaté)
+```
+
+```
+GET 127.0.0.1:5000/api/config/sensor/<name>
+
+Retourne : Code HTTP 200 + La configuration du capteur <name>
+
+Exemple GET 127.0.0.1:5000/api/config/sensor/AnalogTemperature retourne: 
+{
+  "Nom": "AnalogTemperature",
+  "Type": "Temperature",
+  "ID": "salleprojet.temperature",
+  "Unit": "°C",
+  "Ratio": "10^0",
+  "AIN": 1,
+  "GPIO": 13
+}
+
+Code Erreur :  
+- Code HTTP 500 (erreur serveur)
+- Code HTTP 404 (le capteur <name> n'existe pas)
+```
+
+```
+POST 127.0.0.1:5000/api/config/sensor
+
+Retourne : Code HTTP 200 + {'success':True}
+
+Exemple POST 127.0.0.1:5000/api/config/sensor avec le body: 
+{
+    "AnalogTemperature": {
+      "Nom": "AnalogTemperature",
+      "Type": "Temperature",
+      "ID": "salleprojet.temperature",
+      "Unit": "°C",
+      "Ratio": "10^0",
+      "AIN": 1,
+      "GPIO": 13
+    }
+}
+
+Code Erreur :  
+- Code HTTP 500 (erreur serveur)
+- Code HTTP 400 (JSON mal formaté)
+```
+
+```
+DELETE 127.0.0.1:5000/api/config/sensor/<name>
+
+Retourne : Code HTTP 200 + {'success':True}
+
+Exemple DELETE 127.0.0.1:5000/api/config/sensor/AnalogTemperature
+
+Code Erreur :  
+- Code HTTP 500 (erreur serveur)
+```
+
+```
+GET 127.0.0.1:5000/api/info
+
+Retourne : Code HTTP 200 + Les informations de configuration de la Raspberry Pi et de l'OS
+
+Exemple GET 127.0.0.1:5000/api/info retourne: 
+{
+    "Architecture": [
+        "32bit",
+        "ELF"
+    ],
+    "Machine": "armv7l",
+    "Platform": "Linux-5.10.63-v7+-armv7l-with-glibc2.31",
+    "Python Version": [
+        "3.9.2 (default, Mar 12 2021, 04:06:34) ",
+        "[GCC 10.2.1 20210110]"
+    ],
+    "Release version": "5.10.63-v7+",
+    "System name": "Linux",
+    "Uname": {
+        "machine": "armv7l",
+        "node": "raspberrypi",
+        "release": "5.10.63-v7+",
+        "system": "Linux",
+        "version": "#1488 SMP Thu Nov 18 16:14:44 GMT 2021"
+    },
+    "Version": "#1488 SMP Thu Nov 18 16:14:44 GMT 2021"
+}
+
+Code Erreur :  
+- Code HTTP 500 (erreur serveur)
+```
 
 ## Sécurisation du système
 
