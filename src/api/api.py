@@ -4,6 +4,7 @@ import os
 import sys
 import RPi.GPIO as GPIO
 import platform
+import re
 from threading import Thread
 from werkzeug.exceptions import BadRequest
 
@@ -101,6 +102,7 @@ def deleteConfigByName(name):
 @app.route("/api/info",methods=['GET'])
 def getInfo():
     try : 
+        matches = re.search(r"Mem:\s*([0-9]*)\s*([0-9]*)\s*([0-9]*)", os.popen("/usr/bin/free --byte").read())
         return jsonify({
             "Python Version" : sys.version.split('\n'),
             #"Linux Distribution" :  platform.linux_distribution(),
@@ -111,6 +113,12 @@ def getInfo():
             "Platform" : platform.platform(),
             "Uname": platform.uname(),
             "Version" : platform.version(),
+            "Hostname": platform.node(),
+            "Memory": {
+                "Total": round(int(matches.group(1))/1000000, 2),
+                "Used": round(int(matches.group(2))/1000000, 2),
+                "Free": round(int(matches.group(3))/1000000, 2),
+            },
         })
     except Exception as e : 
         abort(500,description="Une erreur est survenue")
