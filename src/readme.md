@@ -316,4 +316,13 @@ Code Erreur :
 
 ## Sécurisation du système
 
-A venir
+L'API utilise le protocole HTTPS pour sécuriser la communication entre la Raspberry et un client  
+L'authentification du client est réalisée en fournissant un certificat reconnu par la Raspberry
+```
+api/
+└── cert
+    ├── client
+    │   └── client.crt      # clé publique du certificat du client autorisé
+    ├── cert.pem            # clé publique du certificat de l'API 
+    └── key.pem             # clé privée du certificat de l'API             
+```

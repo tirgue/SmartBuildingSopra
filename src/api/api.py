@@ -5,16 +5,21 @@ import sys
 import RPi.GPIO as GPIO
 import platform
 import re
+import ssl
 from threading import Thread
 from werkzeug.exceptions import BadRequest
+from werkzeug import serving
 
 
-
+directory = os.path.dirname(__file__)
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
-
+CERT = os.path.join(directory, "cert", "cert.pem")
+KEY = os.path.join(directory, "cert", "key.pem")
+PORT = 8080
+CLIENT_CERT_FOLDER = os.path.join(directory, "cert", "client", "client.crt")
 
 def getConfigFile():
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -139,7 +144,11 @@ if __name__ == "__main__":
     
 
     try :
-        app.run()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.load_cert_chain(CERT, KEY)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_verify_locations(cafile= CLIENT_CERT_FOLDER)
+        serving.run_simple("0.0.0.0", PORT, app, ssl_context=context)
     except Exception as e :
         print(str(e))
 
