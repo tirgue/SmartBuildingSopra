@@ -10,6 +10,7 @@ from sensors.Gas import Gas
 from constants.ADCPins import *
 from constants.GPIOPins import *
 import threading
+from persistqueue import Queue
 
 try:
     from sensors import PCF8591 as ADC
@@ -37,10 +38,9 @@ def setup():
     GPIO.setmode(GPIO.BCM)
     ADC.setup(0x48)
 
-def iothub_send_message():
- 
+def get_message(q):
+
     try:
-        client = iothub_client_init()
         setup()
         initialiseSensor()
        
@@ -48,22 +48,32 @@ def iothub_send_message():
         
         while True:
             lock.acquire()
-           
-
-            dataToSendToIotHub = []
             for e in instance_sensor : 
-                dataToSendToIotHub.append(e.export())
-
-            for d in dataToSendToIotHub:
-                message = Message(d)
-                # Send the message.
-                print( "Sending message: {}".format(message) )
-                #client.send_message(message)
-                print ( "Message successfully sent" )
-            
+                q.put(e.export())
             lock.release()
             time.sleep(SEND_DELAY)
  
+    except :
+        raise
+
+def iothub_send_message(q):
+ 
+    try:
+        client = iothub_client_init()
+        
+        while True:
+            item = q.get()
+            while True:
+                try:
+                    print( "Sending message: {}".format(item) )
+                    client.send_message(item)
+                    print ( "Message successfully sent" )
+                except :
+                    print( "Fail to send message: {}".format(item) )
+                    continue
+                break
+            q.task_done()
+
     except :
         raise
  
@@ -110,15 +120,18 @@ if __name__ == '__main__':
 
     try:
         
-        
-        t1 = threading.Thread(target=iothub_send_message,args=())
+        q = Queue(path="./persistance")
+        t1 = threading.Thread(target=iothub_send_message,args=(q,))
         t2 = threading.Thread(target=handleConfigUpdate,args=())
+        t3 = threading.Thread(target=get_message,args=(q,))
 
         t1.daemon=True
         t2.daemon=True
+        t3.daemon=True
 
         t1.start()
         t2.start()
+        t3.start()
         while True: time.sleep(5)
         
     except Exception as e: 

@@ -2,3 +2,4 @@
 SunFounder_SensorKit_for_RPi2/
 __pycache__
 src/api/cert/
+src/persistance
