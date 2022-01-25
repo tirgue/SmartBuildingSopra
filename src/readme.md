@@ -319,10 +319,13 @@ Code Erreur :
 L'API utilise le protocole HTTPS pour sécuriser la communication entre la Raspberry et un client  
 L'authentification du client est réalisée en fournissant un certificat reconnu par la Raspberry
 ```
-api/
+api
 └── cert
-    ├── client
-    │   └── client.crt      # clé publique du certificat du client autorisé
+    ├── keystore
+    │   ├── ef613759.0      # clés publiques des certificats des clients autorisés
+    │   └── 4efe7786.0  
     ├── cert.pem            # clé publique du certificat de l'API 
     └── key.pem             # clé privée du certificat de l'API             
 ```
+
+Le nom de la clé publique stockée dans la keystore est de la forme : `<hash>.0` où **\<hash\>** est le hash de l'objet du certificat (peut être obtenu en exécutant la commande `openssl x509 -noout -hash -in client_certificate.pem`)
