@@ -2,6 +2,7 @@ import Adafruit_BMP.BMP085 as BMP085
 import time
 import datetime
 import json
+import os
 
 class Barometer():
     def __init__(self):
@@ -10,6 +11,11 @@ class Barometer():
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
         self.sensor = BMP085.BMP085()
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(dir_path + '/../config/' + 'config.json') as file:
+            config = json.load(file)
+            self.ID = config['Capteurs']['Barometer']['ID']
+
 
     def readTemperature(self):
         return  self.sensor.read_temperature()	# Read temperature to veriable temp
@@ -20,10 +26,10 @@ class Barometer():
     def export(self):
         try : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Celsius": self.readTemperature(),"Pressure": self.readPressure(), "Timestamp": ts})
+            return json.dumps({"Temperature Celsius": self.readTemperature(),"Pressure": self.readPressure(),"ID": self.ID, "Timestamp": ts})
         except : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Celsius": None,"Pressure": None, "Timestamp": ts})
+            return json.dumps({"Temperature Celsius": None,"Pressure": None,"ID": self.ID, "Timestamp": ts})
 
 
 

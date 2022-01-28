@@ -25,6 +25,7 @@ class PhotoResistor():
             config = json.load(file)
             self.analogChannel = config['Capteurs']['PhotoResistor']['AIN']
             self.digitalChannel = config['Capteurs']['PhotoResistor']['GPIO']
+            self.ID = config['Capteurs']['PhotoResistor']['ID']
             GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
@@ -35,10 +36,10 @@ class PhotoResistor():
     def export(self):
         try :
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Resistance": self.read(), "Timestamp": ts})
+            return json.dumps({"Resistance": self.read(),"ID": self.ID, "Timestamp": ts})
         except :
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Resistance": None, "Timestamp": ts})
+            return json.dumps({"Resistance": None,"ID": self.ID, "Timestamp": ts})
 
 
 

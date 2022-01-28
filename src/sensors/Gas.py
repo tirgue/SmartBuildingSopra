@@ -47,6 +47,7 @@ class Gas():
             config = json.load(file)
             self.analogChannel = config['Capteurs']['Gas']['AIN']
             self.digitalChannel = config['Capteurs']['Gas']['GPIO']
+            self.ID = config['Capteurs']['Gas']['ID']
             GPIO.setup(self.digitalChannel, GPIO.IN)
             print("Calibrating Gas Sensor...")
             self.Ro = self.calibrate()
@@ -99,10 +100,10 @@ class Gas():
     def export(self):
         try : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"CO": self.getGasConcentration(GAS.CO),"LPG": self.getGasConcentration(GAS.LPG), "Smoke": self.getGasConcentration(GAS.SMOKE), "Timestamp": ts})
+            return json.dumps({"CO": self.getGasConcentration(GAS.CO),"LPG": self.getGasConcentration(GAS.LPG), "Smoke": self.getGasConcentration(GAS.SMOKE),"ID": self.ID, "Timestamp": ts})
         except:
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"CO": None,"LPG": None, "Smoke": None, "Timestamp": ts})
+            return json.dumps({"CO": None,"LPG": None, "Smoke": None,"ID": self.ID, "Timestamp": ts})
 
 
 if __name__ == "__main__":

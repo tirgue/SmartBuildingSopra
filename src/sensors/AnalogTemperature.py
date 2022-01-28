@@ -22,6 +22,7 @@ class AnalogTemperature():
         with open(dir_path + '/../config/' + 'config.json') as file:
             config = json.load(file)
             self.analogChannel = config['Capteurs']['AnalogTemperature']['AIN']
+            self.ID = config['Capteurs']['AnalogTemperature']['ID']
             self.digitalChannel = config['Capteurs']['AnalogTemperature']['GPIO']
             GPIO.setup(self.digitalChannel, GPIO.IN)
 
@@ -48,10 +49,10 @@ class AnalogTemperature():
     def export(self):
         try : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "Timestamp": ts})
+            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "ID" : self.ID, "Timestamp": ts})
         except : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "Timestamp": ts})
+            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "ID": self.ID, "Timestamp": ts})
 
 
 def setup():
