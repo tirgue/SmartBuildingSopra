@@ -32,6 +32,19 @@ Pour le moment les capteurs suivants sont supportés :
 
 Cette liste est amenée à évoluer dans le futur
 
+## Deploiement de l'architecture
+
+L'architecture est déployée sur chaque Raspberry Pi en ajoutant une crown task au demarrage.
+
+```bash
+crontab -e
+```
+
+Une fois dans le fichier il faut ajouter à la fin
+
+```
+@reboot sh $HOME/SmartBuildingSopra/run.sh
+```
 
 ## Collecte des données
 
