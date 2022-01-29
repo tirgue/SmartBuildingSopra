@@ -111,7 +111,10 @@ class GasBuilder:
         self._instance = None
 
     def __call__(self):
-        if self._instance:
+        
+        if not self._instance:
+            self._instance = Gas()
+        else :
             del self._instance
-        self._instance = Gas()
+            self._instance = Gas()
         return self._instance

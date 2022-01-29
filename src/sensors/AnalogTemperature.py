@@ -56,12 +56,17 @@ class AnalogTemperature():
             return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "ID": self.ID, "Timestamp": ts})
 
 class AnalogTemperatureBuilder:
+    
     def __init__(self):
         self._instance = None
-
+        
     def __call__(self):
         
-        if self._instance:
+        if not self._instance:
+            self._instance = AnalogTemperature()
+        else :
             del self._instance
-        self._instance = AnalogTemperature()
+            self._instance = AnalogTemperature()
         return self._instance
+    def __del__(self): 
+        print("Destructor called, Example deleted.") 

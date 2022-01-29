@@ -15,7 +15,7 @@ class Humiture():
         """
         self.configService = configService()
         self.config = self.configService.getConfig()
-        
+
         self.ID = self.config['Capteurs']['Humiture']['ID']
         self.digitalChannel = self.config['Capteurs']['Humiture']['GPIO']
 
@@ -138,7 +138,10 @@ class HumitureBuilder:
         self._instance = None
 
     def __call__(self):
-        if self._instance:
+        
+        if not self._instance:
+            self._instance = Humiture()
+        else :
             del self._instance
-        self._instance =  Humiture()
+            self._instance = Humiture()
         return self._instance

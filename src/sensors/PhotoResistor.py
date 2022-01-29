@@ -47,7 +47,10 @@ class PhotoResistorBuilder:
         self._instance = None
 
     def __call__(self):
-        if self._instance:
+        
+        if not self._instance:
+            self._instance = PhotoResistor()
+        else :
             del self._instance
-        self._instance = PhotoResistor()
+            self._instance = PhotoResistor()
         return self._instance

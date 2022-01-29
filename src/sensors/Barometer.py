@@ -38,7 +38,10 @@ class BarometerBuilder:
         self._instance = None
 
     def __call__(self):
-        if self._instance:
+        
+        if not self._instance:
+            self._instance = Barometer()
+        else :
             del self._instance
-        self._instance = Barometer()
+            self._instance = Barometer()
         return self._instance
