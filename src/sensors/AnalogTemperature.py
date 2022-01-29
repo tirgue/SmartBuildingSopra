@@ -6,7 +6,8 @@ import RPi.GPIO as GPIO
 import math
 import json
 import datetime
-import os
+from services.configService import configService
+
 
 class AnalogTemperature():
     def __init__(self):
@@ -18,13 +19,13 @@ class AnalogTemperature():
 
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.analogChannel = config['Capteurs']['AnalogTemperature']['AIN']
-            self.ID = config['Capteurs']['AnalogTemperature']['ID']
-            self.digitalChannel = config['Capteurs']['AnalogTemperature']['GPIO']
-            GPIO.setup(self.digitalChannel, GPIO.IN)
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+
+        self.analogChannel = self.config['Capteurs']['AnalogTemperature']['AIN']
+        self.ID = self.config['Capteurs']['AnalogTemperature']['ID']
+        self.digitalChannel = self.config['Capteurs']['AnalogTemperature']['GPIO']
+        GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
         """Read the input and return the raw value"""
@@ -54,36 +55,13 @@ class AnalogTemperature():
             ts = datetime.datetime.now().timestamp()
             return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "ID": self.ID, "Timestamp": ts})
 
+class AnalogTemperatureBuilder:
+    def __init__(self):
+        self._instance = None
 
-def setup():
-        GPIO.setmode(GPIO.BCM)
-        ADC.setup(0x48)
-if __name__ == "__main__":
-    import time
-    from datetime import datetime
-
-   
-    def setup():
-        GPIO.setmode(GPIO.BCM)
-        ADC.setup(0x48)
-
-    def loop():
-        analogTemperature = AnalogTemperature()
-        while True:
-            kelvin = round(analogTemperature.readKelvin(), 2)
-            celcius = round(analogTemperature.readCelcius(), 2)
-            fahrenheit = round(analogTemperature.readFahrenheit(), 2)
-
-            print("*** %s ***" %datetime.now().strftime("%H:%M:%S"))
-
-            print("Kelvin : %s K" %kelvin)
-            print("Celcius : %s °C" %celcius)
-            print("Fahrenheit : %s °F" %fahrenheit)
-
-            time.sleep(1)
-
-    try:
-        setup()
-        loop()
-    except KeyboardInterrupt:
-        pass
+    def __call__(self):
+        
+        if self._instance:
+            del self._instance
+        self._instance = AnalogTemperature()
+        return self._instance

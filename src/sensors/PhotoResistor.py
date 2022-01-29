@@ -7,7 +7,7 @@ import RPi.GPIO as GPIO
 import time
 import datetime
 import json
-import os
+from services.configService import configService
 
 class PhotoResistor():
     	
@@ -20,13 +20,12 @@ class PhotoResistor():
 
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.analogChannel = config['Capteurs']['PhotoResistor']['AIN']
-            self.digitalChannel = config['Capteurs']['PhotoResistor']['GPIO']
-            self.ID = config['Capteurs']['PhotoResistor']['ID']
-            GPIO.setup(self.digitalChannel, GPIO.IN)
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+        self.analogChannel = self.config['Capteurs']['PhotoResistor']['AIN']
+        self.digitalChannel = self.config['Capteurs']['PhotoResistor']['GPIO']
+        self.ID = self.config['Capteurs']['PhotoResistor']['ID']
+        GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
         """Read the input and return the raw value"""
@@ -43,25 +42,12 @@ class PhotoResistor():
 
 
 
-def setup():
-	ADC.setup(0x48)
-	GPIO.setmode(GPIO.BCM)
+class PhotoResistorBuilder:
+    def __init__(self):
+        self._instance = None
 
-
-if __name__ == "__main__":
-    import time
-
-
-
-
-    def loop():
-        photoResistor = PhotoResistor()
-        while True:
-            print(photoResistor.read())
-            time.sleep(1)
-
-    try:
-        setup()
-        loop()
-    except KeyboardInterrupt:
-        pass
+    def __call__(self):
+        if self._instance:
+            del self._instance
+        self._instance = PhotoResistor()
+        return self._instance

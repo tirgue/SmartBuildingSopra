@@ -2,7 +2,7 @@ import Adafruit_BMP.BMP085 as BMP085
 import time
 import datetime
 import json
-import os
+from services.configService import configService
 
 class Barometer():
     def __init__(self):
@@ -11,10 +11,10 @@ class Barometer():
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
         self.sensor = BMP085.BMP085()
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.ID = config['Capteurs']['Barometer']['ID']
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+        
+        self.ID = self.config['Capteurs']['Barometer']['ID']
 
 
     def readTemperature(self):
@@ -33,21 +33,12 @@ class Barometer():
 
 
 
+class BarometerBuilder:
+    def __init__(self):
+        self._instance = None
 
-def loop():
-    while True:
-        pressureSensor =  Barometer()
-        print ('')
-        print ('      Temperature = {0:0.2f} C'.format(pressureSensor.readTemperature()))		# Print temperature
-        print ('      Pressure = {0:0.2f} Pa'.format(pressureSensor.readPressure()))	# Print pressure
-        print(pressureSensor.export())
-        time.sleep(1)			
-        print ('')
-
-
-
-if __name__ == '__main__':
-	try:
-		loop()
-	except KeyboardInterrupt:
-		pass
+    def __call__(self):
+        if self._instance:
+            del self._instance
+        self._instance = Barometer()
+        return self._instance

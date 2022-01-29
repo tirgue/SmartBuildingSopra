@@ -6,8 +6,8 @@ from typing import Dict, List
 import RPi.GPIO as GPIO
 import time
 import math 
-import os
 import json
+from services.configService import configService
 import datetime
 from enum import Enum
 
@@ -42,16 +42,16 @@ class Gas():
     Ro = 10
 
     def __init__(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.analogChannel = config['Capteurs']['Gas']['AIN']
-            self.digitalChannel = config['Capteurs']['Gas']['GPIO']
-            self.ID = config['Capteurs']['Gas']['ID']
-            GPIO.setup(self.digitalChannel, GPIO.IN)
-            print("Calibrating Gas Sensor...")
-            self.Ro = self.calibrate()
-            print("Calibration done, Ro :", self.Ro, "k")
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+
+        self.analogChannel = self.config['Capteurs']['Gas']['AIN']
+        self.digitalChannel = self.config['Capteurs']['Gas']['GPIO']
+        self.ID = self.config['Capteurs']['Gas']['ID']
+        GPIO.setup(self.digitalChannel, GPIO.IN)
+        print("Calibrating Gas Sensor...")
+        self.Ro = self.calibrate()
+        print("Calibration done, Ro :", self.Ro, "k")
 
     def read(self):
         v = ADC.read(self.analogChannel)
@@ -106,32 +106,12 @@ class Gas():
             return json.dumps({"CO": None,"LPG": None, "Smoke": None,"ID": self.ID, "Timestamp": ts})
 
 
-if __name__ == "__main__":
-    from datetime import datetime
+class GasBuilder:
+    def __init__(self):
+        self._instance = None
 
-
-
-    def setup():
-        GPIO.setmode(GPIO.BCM)
-        ADC.setup(0x48)
-
-    def loop():
-        gasSensor = Gas()
-        while True:
-            co = gasSensor.getGasConcentration(GAS.CO)
-            lpg = gasSensor.getGasConcentration(GAS.LPG)
-            smoke = gasSensor.getGasConcentration(GAS.SMOKE)
-
-            print("*** %s ***" %datetime.now().strftime("%H:%M:%S"))
-
-            print("CO :", co, "ppm")
-            print("LPG :", lpg, "ppm")
-            print("SMOKE :", smoke, "ppm")
-
-            time.sleep(1)
-
-    try:
-        setup()
-        loop()
-    except KeyboardInterrupt:
-        pass
+    def __call__(self):
+        if self._instance:
+            del self._instance
+        self._instance = Gas()
+        return self._instance

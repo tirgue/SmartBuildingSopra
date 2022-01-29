@@ -1,51 +1,24 @@
 import time
-import math
-import json
 import os 
-from sensors.AnalogTemperature import AnalogTemperature
-from sensors.Humiture import Humiture
-from sensors.Barometer import Barometer
-from sensors.PhotoResistor import PhotoResistor
-from sensors.Gas import Gas
 from constants.ADCPins import *
 from constants.GPIOPins import *
+from services.configService import configService
+from services.sensorServiceProvider import services
 import threading
 from persistqueue import Queue
+from services.sendService import sendService
 
-try:
-    from sensors import PCF8591 as ADC
-except:
-    import PCF8591 as ADC
-import RPi.GPIO as GPIO
-from azure.iot.device import IoTHubDeviceClient, Message
- 
-CONNECTION_STRING = "HostName=test-hub-iot-sopra.azure-devices.net;DeviceId=test;SharedAccessKey=TNR/5rzIlvSpR5bwEQTFraUCEW2SY2G4vcuKfMltQ5I="
-SEND_DELAY = 5 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+SEND_DELAY = 10 
 lock = threading.Lock()
 instance_sensor = []
-
-
-
-
-
-def iothub_client_init():
-    # Create an IoT Hub client
-    client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
-    return client
-		
-def setup():
-    GPIO.setmode(GPIO.BCM)
-    ADC.setup(0x48)
+configService0 = configService()
+configService1 = configService()
+print(configService0 == configService1)
 
 def get_message(q):
 
     try:
-        setup()
-        initialiseSensor()
-       
-        global instance_sensor
-        
+        initialiseSensor()        
         while True:
             lock.acquire()
             for e in instance_sensor : 
@@ -56,38 +29,13 @@ def get_message(q):
     except :
         raise
 
-def iothub_send_message(q):
- 
-    try:
-        client = iothub_client_init()
-        
-        while True:
-            item = q.get()
-            while True:
-                try:
-                    print( "Sending message: {}".format(item) )
-                    client.send_message(item)
-                    print ( "Message successfully sent" )
-                except :
-                    print( "Fail to send message: {}".format(item) )
-                    continue
-                break
-            q.task_done()
-
-    except :
-        raise
- 
 def handleConfigUpdate():
 
     try:
-        InitialStamp = os.stat(dir_path + '/config/config.json').st_mtime
-        
         while True:
-            currentStamp = os.stat(dir_path + '/config/config.json').st_mtime
-            if InitialStamp != currentStamp:
+            if configService0.configWasUpdated():
                 lock.acquire()
                 initialiseSensor()
-                InitialStamp = currentStamp
                 lock.release()
             time.sleep(1)
     except : 
@@ -98,20 +46,16 @@ To initialize the right sensor instance
 Have to be maintened frequently
 """
 def initialiseSensor():
-    with open(dir_path + '/config/' + 'config.json') as file:
-        config = json.load(file)
-        available_sensor = ["AnalogTemperature","Barometer","PhotoResistor","Gas","Humiditure"]
+        config = configService0.getConfig()
         global instance_sensor
-        instance_sensor.clear()
+        del instance_sensor[:]
 
-        if "AnalogTemperature" in config["Capteurs"]:
-            instance_sensor.append(AnalogTemperature())
-        if "PhotoResistor" in config["Capteurs"]:
-            instance_sensor.append(PhotoResistor())
-        if "Gas" in config["Capteurs"]:
-            instance_sensor.append(Gas())
-        if "Humiture" in config["Capteurs"]:
-            instance_sensor.append(Humiture())
+        for key in config["Capteurs"]:
+            try:
+                instance_sensor.append(services.get(key))
+            except Exception as e :
+                print("can't instantiate : "+str(e))
+                continue
 
 
 
@@ -119,9 +63,8 @@ def initialiseSensor():
 if __name__ == '__main__':
 
     try:
-        
         q = Queue(path="./persistance")
-        t1 = threading.Thread(target=iothub_send_message,args=(q,))
+        t1 = sendService(q)
         t2 = threading.Thread(target=handleConfigUpdate,args=())
         t3 = threading.Thread(target=get_message,args=(q,))
 

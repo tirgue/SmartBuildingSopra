@@ -55,23 +55,22 @@ Ensuite il faut créer une classe permettant de lire les données et de les expo
 ```python
 
 class AnalogTemperature():
-
-    """Initialisation d'un nouveau capteur de temperature"""
     def __init__(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        """recuperation de la configuration du capteur à partir du fichier config.json (connectique)"""
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.analogChannel = config['Capteurs']['AnalogTemperature']['AIN']
-            self.digitalChannel = config['Capteurs']['AnalogTemperature']['GPIO']
-            GPIO.setup(self.digitalChannel, GPIO.IN)
+        
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+
+        self.analogChannel = self.config['Capteurs']['AnalogTemperature']['AIN']
+        self.ID = self.config['Capteurs']['AnalogTemperature']['ID']
+        self.digitalChannel = self.config['Capteurs']['AnalogTemperature']['GPIO']
+        GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
-        """Lecture de l'input et retourne une valeur brute"""
+        """Read the input and return the raw value"""
         return ADC.read(self.analogChannel) 
 
     def readKelvin(self):
-        """Lecture de la valeur brute puis conversion en temperature Kelvin"""
+        """Read the input and return the temperature expressed in Kelvin"""
         analogVal = self.read()
         Vr = 5 * float(analogVal) / 255
         Rt = 10000 * Vr / (5 - Vr)
@@ -79,26 +78,41 @@ class AnalogTemperature():
         return temp
 
     def readCelcius(self):
-        """Lecture de la temperature en Kelvin puis conversion en temperature Celsius"""
+        """Read the input and return the temperature expressed in Celcius"""
         return self.readKelvin() - 273.15
 
     def readFahrenheit(self):
-        """Lecture de la temperature en Celsius puis conversion en temperature Fahrenheit"""
+        """Read the input and return the temperature expressed in Fahrenheit"""
         return (self.readCelcius() * 9/5) + 32
 
     def export(self):
-        """ Permet d'exporter les données sous format json et DOIT être definie"""
         try : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "Timestamp": ts})
+            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "ID" : self.ID, "Timestamp": ts})
         except : 
             ts = datetime.datetime.now().timestamp()
-            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "Timestamp": ts})
+            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "ID": self.ID, "Timestamp": ts})
+
+```
+
+Puis le builder associé qui va gérer l'instanciation de l'objet et sa configuration
+
+```python
+class AnalogTemperatureBuilder:
+    def __init__(self):
+        self._instance = None
+
+    def __call__(self):
+        
+        if self._instance:
+            del self._instance
+        self._instance = AnalogTemperature()
+        return self._instance
 
 
 ```
 
-Une fois la classe créée, il faut ajouter le capteur dans la configuration `config/config.json` soit manuellement, soit via l'API (cf. partie Configuration du système). Dans cet exemple, le capteur est relié au port analogique 1 et au port GPIO 13.
+Une fois les classes créées, il faut ajouter le capteur dans la configuration `config/config.json` soit manuellement, soit via l'API (cf. partie Configuration du système). Dans cet exemple, le capteur est relié au port analogique 1 et au port GPIO 13.
 
 ```json
 "AnalogTemperature": {
@@ -112,25 +126,17 @@ Une fois la classe créée, il faut ajouter le capteur dans la configuration `co
 }
 ```
 
-Ensuite dans le fichier `deploy.py`, il faut mapper l'objet json ajouté avec l'objet python correspondant. Cette etape permettra d'instancier automatiquement le bon objet en fonction du contenu du fichier de configuration.
+Ensuite dans le fichier `services/sensorServiceProvider.py`, il faut mapper l'objet json ajouté avec l'objet python correspondant. Cette etape permettra d'instancier automatiquement le bon objet via une factory en fonction du contenu du fichier de configuration.
 
 ```python
-def initialiseSensor():
-    with open(dir_path + '/config/' + 'config.json') as file:
-        config = json.load(file)
-        available_sensor = ["AnalogTemperature","Barometer","PhotoResistor","Gas","Humiditure"]
-        global instance_sensor
-        instance_sensor.clear()
-
-        if "AnalogTemperature" in config["Capteurs"]:
-            instance_sensor.append(AnalogTemperature()) # Objet correspondant
-        if "PhotoResistor" in config["Capteurs"]:
-            instance_sensor.append(PhotoResistor())
-        if "Gas" in config["Capteurs"]:
-            instance_sensor.append(Gas())
-        if "Humiture" in config["Capteurs"]:
-            instance_sensor.append(Humiture())
+services = SensorServiceProvider()
+services.register_object('AnalogTemperature', AnalogTemperatureBuilder())
+services.register_object('Humiture', HumitureBuilder())
+services.register_object('Barometer', BarometerBuilder())
+services.register_object('PhotoResistor', PhotoResistorBuilder())
+services.register_object('Gas', GasBuilder())
 ```
+
 Après cette etape il suffit de lancer le script run.sh et les données seront collectées et envoyées dans le cloud Azure.
 
 ## Transmission et stockage dans le cloud 

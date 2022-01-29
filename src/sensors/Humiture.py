@@ -3,6 +3,8 @@ import time
 import json
 import datetime
 import os
+from services.configService import configService
+
 
 class Humiture():
     def __init__(self):
@@ -11,11 +13,11 @@ class Humiture():
         Args:
             digitalChannel (int): the number of GPIO of the Raspberry PI on which the sensor is pluged on
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(dir_path + '/../config/' + 'config.json') as file:
-            config = json.load(file)
-            self.ID = config['Capteurs']['Humiture']['ID']
-            self.digitalChannel = config['Capteurs']['Humiture']['GPIO']
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+        
+        self.ID = self.config['Capteurs']['Humiture']['ID']
+        self.digitalChannel = self.config['Capteurs']['Humiture']['GPIO']
 
     def read(self):
         """Read the input and return the raw value"""
@@ -131,29 +133,12 @@ class Humiture():
             return json.dumps({"Humidity": None,"Temperature Celsius": None,"ID": self.ID,"Timestamp" : ts})
 
 
-if __name__ == "__main__":
-    import time
-    from datetime import datetime
+class HumitureBuilder:
+    def __init__(self):
+        self._instance = None
 
-    
-    def setup():
-        GPIO.setmode(GPIO.BCM)
-    
-    def loop():
-        humiture = Humiture()
-        while True:
-            humidity, temperature = humiture.readHumidityAndTemperature()
-
-            if humidity or temperature:
-                print("*** %s ***" %datetime.now().strftime("%H:%M:%S"))
-
-                print("Humidity : %s %%" %humidity)
-                print("Celcius : %s °C" %temperature)
-
-            time.sleep(1)
-
-    try:
-        setup()
-        loop()
-    except KeyboardInterrupt:
-        pass    
+    def __call__(self):
+        if self._instance:
+            del self._instance
+        self._instance =  Humiture()
+        return self._instance
