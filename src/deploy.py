@@ -12,8 +12,7 @@ SEND_DELAY = 10
 lock = threading.Lock()
 instance_sensor = []
 configService0 = configService()
-configService1 = configService()
-print(configService0 == configService1)
+
 
 def get_message(q):
 
