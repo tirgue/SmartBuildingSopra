@@ -13,7 +13,9 @@ LOG_FILE="setup_$(date +"%Y-%m-%d_%H:%M:%S_%N").log"
 TICK="\r[${GRE}✓${NC}]"
 CROSS="\r[${RED}✗${NC}]"
 
-trap "echo An error has occured, check ${LOG_FILE} for more details" ERR
+ALERT_MSG="echo -e \"\nAn error has occured, check ${LOG_FILE} for more details\""
+
+trap "$ALERT_MSG" ERR
 
 echo -e  " ${WHI}                                       ${ORA}  ▄▄${RED} ▄▄▄▄     ${WHI}        ▄              ▀          "
 echo -e  " ${WHI}    █▀▀▀▄  ▄▀▀▀▄  ▐█▀▀▀█▄ ▐█▄▀ ▄▄▀▀▄█  ${ORA} ██ ${RED}   ▀▀███  ${WHI} █▀▀▀▄ ▀█▀▀ ▄▀▀▀▄ ▐█▄▀ █  ▄▄▀▀▄█  "
@@ -61,9 +63,14 @@ echo -ne "${CROSS} Setting up sensors"
 sudo raspi-config nonint do_i2c 0 >> $LOG_FILE 2>&1
 echo -e $TICK
 
-if ! crontab -l | grep '@reboot sh \$HOME/SmartBuildingSopra/run.sh' >> /dev/null; then
+if ! (crontab -l | grep '@reboot sh $HOME/SmartBuildingSopra/run.sh') > /dev/null 2>&1; then
     echo -ne "${CROSS} Setting up run at startup"
-    echo -e "$(crontab -l)\n@reboot sh \$HOME/SmartBuildingSopra/run.sh" | crontab >> $LOG_FILE 2>&1
+
+    set +e && trap - ERR
+    cronlist=$(crontab -l 2>/dev/null)
+    set -e && trap "$ALERT_MSG" ERR
+
+    echo -e "${cronlist}\n@reboot sh \$HOME/SmartBuildingSopra/run.sh" | crontab >> $LOG_FILE 2>&1
     echo -e $TICK
 fi
 echo ""
