@@ -1,0 +1,61 @@
+{
+    "Measure" : {
+
+        "Temperature" : {
+            "Unit" : "°C",
+            "Good" : [20,22],
+            "Info" : {
+                "Up" : [22,30],
+                "Down" : [17,20]  
+            },
+            "Alarm" : {
+                "Up" : [30],
+                "Down" : [17]  
+            }
+        },
+        "Humidity" : {
+            "Unit" : "%",
+            "Good" : [40,60],
+            "Info" : {
+                "Up" : [60,70],
+                "Down" : [20,40]  
+            },
+            "Alarm" : {
+                "Up" : [70],
+                "Down" : [20]  
+            }
+        },
+        "Noise" : {
+            "Unit" : "dB",
+            "Good" : [0,65],
+            "Info" : [65,80],
+            "Alarm" : [80]
+        },
+        "CO" : {
+            "Unit" : "ppm",
+            "Good" : [0,10],
+            "Info" : [10,50],
+            "Alarm" : [50]
+        },
+        "CO2" : {
+            "Unit" : "ppm",
+            "Good" : [0,800],
+            "Info" : [800,1000],
+            "Alarm" : [1000]
+        },
+        "Luminosity" : {
+            "Unit" : "lux",
+            "Hallways" : {
+                "Info" : [0,40]
+            },
+            "Cloakrooms" : {
+                "Info" : [0,120]
+            },
+            "Office" : {
+                "Info" : [0,200]
+            }
+        }
+
+
+    }
+}

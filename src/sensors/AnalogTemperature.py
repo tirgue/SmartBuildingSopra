@@ -4,9 +4,13 @@ except:
     import PCF8591 as ADC
 import RPi.GPIO as GPIO
 import math
+import json
+import datetime
+from services.configService import configService
+
 
 class AnalogTemperature():
-    def __init__(self, analogChannel, digitalChannel):
+    def __init__(self):
         """Initialise a new analog temperature sensor
 
         Args:
@@ -15,9 +19,13 @@ class AnalogTemperature():
 
         Note: use constants from src.constants to simplify the initialisation (see example below)
         """
-        self.analogChannel = analogChannel
-        self.digitalChannel = digitalChannel
-        GPIO.setup(digitalChannel, GPIO.IN)
+        self.configService = configService()
+        self.config = self.configService.getConfig()
+
+        self.analogChannel = self.config['Capteurs']['AnalogTemperature']['AIN']
+        self.ID = self.config['Capteurs']['AnalogTemperature']['ID']
+        self.digitalChannel = self.config['Capteurs']['AnalogTemperature']['GPIO']
+        GPIO.setup(self.digitalChannel, GPIO.IN)
 
     def read(self):
         """Read the input and return the raw value"""
@@ -39,35 +47,26 @@ class AnalogTemperature():
         """Read the input and return the temperature expressed in Fahrenheit"""
         return (self.readCelcius() * 9/5) + 32
 
+    def export(self):
+        try : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": self.readKelvin(),"Temperature Celsius": self.readCelcius(), "Temperature Fahrenheit": self.readFahrenheit(), "ID" : self.ID, "Timestamp": ts})
+        except : 
+            ts = datetime.datetime.now().timestamp()
+            return json.dumps({"Temperature Kelvin": None,"Temperature Celsius": None, "Temperature Fahrenheit": None, "ID": self.ID, "Timestamp": ts})
 
-if __name__ == "__main__":
-    import time
-    from datetime import datetime
-
-    AIN0 = 0        # Both need to be imported
-    GPIO17 = 17     # from constants when used
-
-    def setup():
-        GPIO.setmode(GPIO.BCM)
-        ADC.setup(0x48)
-
-    def loop():
-        analogTemperature = AnalogTemperature(AIN0, GPIO17)
-        while True:
-            kelvin = round(analogTemperature.readKelvin(), 2)
-            celcius = round(analogTemperature.readCelcius(), 2)
-            fahrenheit = round(analogTemperature.readFahrenheit(), 2)
-
-            print("*** %s ***" %datetime.now().strftime("%H:%M:%S"))
-
-            print("Kelvin : %s K" %kelvin)
-            print("Celcius : %s °C" %celcius)
-            print("Fahrenheit : %s °F" %fahrenheit)
-
-            time.sleep(1)
-
-    try:
-        setup()
-        loop()
-    except KeyboardInterrupt:
-        pass
+class AnalogTemperatureBuilder:
+    
+    def __init__(self):
+        self._instance = None
+        
+    def __call__(self):
+        
+        if not self._instance:
+            self._instance = AnalogTemperature()
+        else :
+            del self._instance
+            self._instance = AnalogTemperature()
+        return self._instance
+    def __del__(self): 
+        print("Destructor called, Example deleted.") 
